@@ -20,6 +20,7 @@ return new class extends Migration
         $table->string('image')->nullable();
         $table->boolean('is_available')->default(true);
         $table->timestamps();
+        $table->boolean('is_popular')->default(false)->after('price');
     });
 }
 
