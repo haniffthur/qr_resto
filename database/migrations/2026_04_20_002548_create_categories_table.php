@@ -11,11 +11,10 @@ return new class extends Migration
      */
    public function up(): void
 {
-    Schema::create('tables', function (Blueprint $table) {
+    Schema::create('categories', function (Blueprint $table) {
         $table->id();
-        $table->string('number')->unique(); // Contoh: '01', '02'
-        $table->string('token')->unique();  // Untuk keamanan QR
-        $table->enum('status', ['available', 'occupied'])->default('available');
+        $table->string('name');
+        $table->string('slug')->unique();
         $table->timestamps();
     });
 }
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tables');
+        Schema::dropIfExists('categories');
     }
 };

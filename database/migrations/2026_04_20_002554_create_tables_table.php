@@ -11,13 +11,11 @@ return new class extends Migration
      */
    public function up(): void
 {
-    Schema::create('order_details', function (Blueprint $table) {
+    Schema::create('tables', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('order_id')->constrained()->onDelete('cascade');
-        $table->foreignId('menu_id')->constrained();
-        $table->integer('quantity');
-        $table->integer('price'); // Simpan harga pas order (snapshot)
-        $table->text('notes')->nullable();
+        $table->string('number')->unique(); 
+        $table->string('token')->unique(); 
+        $table->enum('status', ['available', 'occupied'])->default('available');
         $table->timestamps();
     });
 }
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('order_details');
+        Schema::dropIfExists('tables');
     }
 };

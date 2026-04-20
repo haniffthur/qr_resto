@@ -18,8 +18,6 @@ return new class extends Migration
         $table->integer('total_price');
         $table->enum('status', ['pending', 'processing', 'completed', 'cancelled'])->default('pending');
         $table->enum('payment_status', ['unpaid', 'paid'])->default('unpaid');
-        $table->string('payment_method'); // QRIS, TRANSFER, CASH
-        $table->string('payment_reference')->nullable(); // ID dari Midtrans
         $table->timestamps();
     });
 }
