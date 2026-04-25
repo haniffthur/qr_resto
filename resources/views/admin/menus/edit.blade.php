@@ -1,67 +1,55 @@
 @extends('layouts.admin')
 
-@section('title', 'Edit Menu - ' . $menu->name)
+@section('title', 'Edit Menu - Panel Bos')
 
 @section('content')
-    <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-        <div class="flex justify-between items-center mb-6 border-b pb-4">
-            <h2 class="text-2xl font-bold text-gray-800">Edit Menu</h2>
-            <a href="{{ route('admin.menus.index') }}" class="text-gray-500 hover:text-gray-800 font-medium">&larr; Batal & Kembali</a>
+<div class="max-w-3xl mx-auto">
+    <div class="flex items-center gap-4 mb-8">
+        <a href="{{ route('admin.menus.index') }}" class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 hover:text-orange-500 transition shadow-sm">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Edit <span class="text-orange-500">Menu</span></h2>
+    </div>
+
+    <form action="{{ route('admin.menus.update', $menu->id) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+        @csrf
+        @method('PUT')
+        
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nama Menu</label>
+                <input type="text" name="name" value="{{ $menu->name }}" required class="w-full border border-slate-200 p-4 rounded-2xl mt-1 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-orange-500 transition">
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Kategori</label>
+                <select name="category_id" required class="w-full border border-slate-200 p-4 rounded-2xl mt-1 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-orange-500 transition appearance-none bg-white">
+                    @foreach($categories as $cat)
+                        <option value="{{ $cat->id }}" {{ $menu->category_id == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Harga (Rp)</label>
+                <input type="number" name="price" value="{{ (int)$menu->price }}" required class="w-full border border-slate-200 p-4 rounded-2xl mt-1 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-orange-500 transition">
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ubah Foto (Biarkan kosong jika tidak diubah)</label>
+                <div class="flex items-center gap-6 mt-2">
+                    <div class="w-24 h-24 rounded-2xl overflow-hidden shadow-md shrink-0">
+                        <img src="{{ asset('storage/'.$menu->image) }}" class="w-full h-full object-cover">
+                    </div>
+                    <input type="file" name="image" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-orange-50 file:text-orange-500">
+                </div>
+            </div>
         </div>
 
-        <form action="{{ route('admin.menus.update', $menu->id) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
-            @csrf
-            @method('PUT')
-
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Nama Menu</label>
-                <input type="text" name="name" value="{{ $menu->name }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none">
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Kategori</label>
-                    <select name="category_id" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none">
-                        @foreach($categories as $category)
-                            <option value="{{ $category->id }}" {{ $menu->category_id == $category->id ? 'selected' : '' }}>
-                                {{ $category->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Harga (Rp)</label>
-                    <input type="number" name="price" value="{{ $menu->price }}" required min="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Deskripsi Singkat</label>
-                <textarea name="description" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none">{{ $menu->description }}</textarea>
-            </div>
-
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Foto Menu</label>
-                @if($menu->image)
-                    <div class="mb-3 flex items-center space-x-4">
-                        <img src="{{ asset('storage/' . $menu->image) }}" class="w-20 h-20 object-cover rounded-lg border shadow-sm">
-                        <span class="text-xs text-gray-500">Foto yang sedang digunakan</span>
-                    </div>
-                @endif
-                <input type="file" name="image" accept="image/*" class="w-full px-4 py-2 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
-                <p class="text-xs text-gray-400 mt-1">*Kosongkan jika tidak ingin mengubah foto</p>
-            </div>
-
-            <div class="flex items-center">
-                <input type="checkbox" name="is_available" id="is_available" value="1" {{ $menu->is_available ? 'checked' : '' }} class="w-5 h-5 text-orange-600 rounded focus:ring-orange-500">
-                <label for="is_available" class="ml-2 font-medium text-gray-700">Menu Tersedia (Siap Dijual)</label>
-            </div>
-
-            <div class="pt-4 border-t">
-                <button type="submit" class="w-full bg-black hover:bg-gray-800 text-white font-bold py-3 rounded-lg shadow-lg transition text-center">
-                    Simpan Perubahan
-                </button>
-            </div>
-        </form>
-    </div>
+        <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black uppercase text-sm tracking-[0.2em] shadow-xl shadow-slate-200 active:scale-95 transition">
+            Update Menu ✅
+        </button>
+    </form>
+</div>
 @endsection

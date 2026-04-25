@@ -8,23 +8,30 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
-    protected $fillable = [
-        'table_id',
+ protected $fillable = [
+        'table_id', 
         'order_code',
-        'total_price',
-        'status',
-        'payment_status'
+        'customer_name', 
+        'total_price', 
+        'status', 
+        'payment_status',
+        'snap_token',
+        'note'
     ];
 
-    // INI YANG KURANG: Relasi ke OrderItem
-    public function items(): HasMany
-    {
-        return $this->hasMany(OrderItem::class);
-    }
 
     // Relasi ke Table (Meja)
     public function table(): BelongsTo
     {
         return $this->belongsTo(Table::class);
+    }
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(OrderItem::class);
     }
 }

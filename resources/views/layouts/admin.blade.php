@@ -15,6 +15,7 @@
             <div class="hidden md:flex space-x-4">
                 <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'text-orange-600 font-bold border-b-2 border-orange-600 pb-1' : 'text-gray-500 font-medium hover:text-orange-600 transition' }}">Dashboard</a>
                 <a href="{{ route('admin.menus.index') }}" class="{{ request()->routeIs('admin.menus.*') ? 'text-orange-600 font-bold border-b-2 border-orange-600 pb-1' : 'text-gray-500 font-medium hover:text-orange-600 transition' }}">Menu</a>
+                <a href="{{ route('admin.categories.index') }}" class="{{ request()->routeIs('admin.categories.*') ? 'text-orange-600 font-bold border-b-2 border-orange-600 pb-1' : 'text-gray-500 font-medium hover:text-orange-600 transition' }}">Kategori</a>
                 <a href="{{ route('admin.tables.index') }}" class="{{ request()->routeIs('admin.tables.*') ? 'text-orange-600 font-bold border-b-2 border-orange-600 pb-1' : 'text-gray-500 font-medium hover:text-orange-600 transition' }}">Meja</a>
                 <a href="{{ route('admin.reports.index') }}" class="{{ request()->routeIs('admin.reports.*') ? 'text-orange-600 font-bold border-b-2 border-orange-600 pb-1' : 'text-gray-500 font-medium hover:text-orange-600 transition' }}">Laporan</a>
             </div>

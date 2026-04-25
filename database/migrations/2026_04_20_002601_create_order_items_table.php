@@ -16,7 +16,7 @@ return new class extends Migration
         $table->foreignId('order_id')->constrained()->onDelete('cascade');
         $table->foreignId('menu_id')->constrained();
         $table->integer('quantity');
-        $table->integer('price'); 
+        $table->decimal('price', 12, 2);
         $table->text('notes')->nullable();
         $table->timestamps();
     });

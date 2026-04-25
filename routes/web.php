@@ -9,8 +9,11 @@ use App\Http\Controllers\Admin\TableController;
 use App\Models\Menu;
 use App\Models\Category;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\Admin\CategoryController;
 
 // --- ROUTE UNTUK PELANGGAN (GUEST) ---
+
+
 Route::get('/scan/{number}/{token}', [CustomerController::class, 'scan'])->name('scan');
 
 // ✅ FIX: Cart routes HARUS di luar middleware check.table
@@ -24,7 +27,11 @@ Route::middleware(['check.table'])->group(function () {
     Route::get('/home', [CustomerController::class, 'home'])->name('customer.home');
     Route::get('/menu', [CustomerController::class, 'index'])->name('customer.menu');
     Route::get('/menu/{id}', [CustomerController::class, 'show'])->name('customer.menu.detail');
-    Route::post('/order', [CustomerController::class, 'placeOrder'])->name('customer.order');
+    Route::post('/order/checkout', [CustomerController::class, 'checkout'])->name('customer.order');
+    Route::get('/contact', function() {
+    return view('customer.contact');
+})->name('customer.contact');
+    
 });
 
 // --- PENGATUR LALU LINTAS LOGIN ---
@@ -47,17 +54,25 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     })->name('dashboard');
 
     Route::resource('menus', MenuController::class);
+    Route::patch('/menus/{id}/toggle-status', [MenuController::class, 'toggleStatus'])->name('menus.toggleStatus');
     Route::resource('tables', TableController::class);
     Route::get('/reports', [App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+
+    Route::resource('categories', CategoryController::class);
 });
 
 // --- RUANGAN KHUSUS KASIR ---
 Route::middleware(['auth', 'role:kasir'])->prefix('kasir')->name('kasir.')->group(function () {
     Route::get('/dashboard', [KitchenController::class, 'index'])->name('dashboard');
-    Route::post('/order/{order}/status', [KitchenController::class, 'updateStatus'])->name('update-status');
-    Route::post('/order/{order}/pay', [KitchenController::class, 'pay'])->name('pay');
-    Route::get('/order/{order}/receipt', [KitchenController::class, 'receipt'])->name('receipt');
+    
+    // Gunakan ini untuk menyelesaikan pesanan (menghapus dari dashboard)
+    Route::post('/order/{order}/complete', [KitchenController::class, 'complete'])->name('complete');
+    
     Route::get('/history', [KitchenController::class, 'history'])->name('history');
+    Route::get('/order/{order}/receipt', [KitchenController::class, 'receipt'])->name('receipt');
+
+    Route::get('/pos', [KitchenController::class, 'pos'])->name('pos');
+    Route::post('/pos/store', [KitchenController::class, 'storePos'])->name('pos.store');
 });
 
 Route::middleware('auth')->group(function () {

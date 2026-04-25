@@ -1,68 +1,83 @@
 @extends('layouts.admin')
 
-@section('title', 'Manajemen Menu - Admin')
+@section('title', 'Daftar Menu - Panel Bos')
 
 @section('content')
-    @if(session('success'))
-    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)" class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative flex justify-between items-center">
-        <span class="font-medium">{{ session('success') }}</span>
-        <button @click="show = false" class="text-green-700 font-bold">&times;</button>
+<div class="flex justify-between items-center mb-8">
+    <div>
+        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Manajemen <span class="text-orange-500">Menu</span> 🍔</h2>
+        <p class="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">Total Menu: {{ $menus->count() }}</p>
     </div>
-    @endif
+    <a href="{{ route('admin.menus.create') }}" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-orange-200 transition active:scale-95">
+        + Tambah Menu
+    </a>
+</div>
 
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-bold text-gray-800">Daftar Menu Resto</h2>
-        <a href="{{ route('admin.menus.create') }}" class="bg-black text-white px-5 py-2.5 rounded-lg font-bold shadow-md hover:bg-gray-800 transition">
-            + Tambah Menu
-        </a>
+@if(session('success'))
+    <div class="bg-emerald-50 text-emerald-600 p-4 rounded-2xl mb-6 border border-emerald-100 font-bold text-sm animate__animated animate__fadeIn">
+        {{ session('success') }}
     </div>
+@endif
 
-    <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
-        <table class="w-full text-left border-collapse text-sm">
-            <thead>
-                <tr class="bg-gray-50 border-b border-gray-200 uppercase text-gray-600">
-                    <th class="p-4 font-semibold">Menu & Deskripsi</th>
-                    <th class="p-4 font-semibold">Kategori</th>
-                    <th class="p-4 font-semibold">Harga</th>
-                    <th class="p-4 font-semibold text-center">Status</th>
-                    <th class="p-4 font-semibold text-right">Aksi</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-                @forelse($menus as $menu)
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="p-4 flex items-center space-x-4">
-                        @if($menu->image)
-                            <div class="w-12 h-12 bg-gray-200 rounded-lg bg-cover bg-center shadow-sm" style="background-image: url('{{ asset('storage/'.$menu->image) }}')"></div>
-                        @else
-                            <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 border border-gray-200">
-                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                            </div>
-                        @endif
-                        <div>
-                            <p class="font-bold text-gray-800">{{ $menu->name }}</p>
-                            <p class="text-xs text-gray-500 truncate w-48">{{ $menu->description ?: 'No description' }}</p>
+<div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+    <table class="w-full text-left">
+        <thead class="bg-slate-50 border-b border-gray-100 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+            <tr>
+                <th class="px-8 py-5">Foto & Nama</th>
+                <th class="px-6 py-5">Kategori</th>
+                <th class="px-6 py-5">Harga</th>
+                <th class="px-6 py-5">Status Stok</th>
+                <th class="px-6 py-5 text-center">Aksi</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+            @forelse($menus as $menu)
+            <tr class="hover:bg-slate-50/50 transition">
+                <td class="px-8 py-5">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl overflow-hidden shadow-sm border border-white">
+                            <img src="{{ asset('storage/'.$menu->image) }}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100?text=WN'">
                         </div>
-                    </td>
-                    <td class="p-4 text-gray-600 font-medium">{{ $menu->category->name ?? 'N/A' }}</td>
-                    <td class="p-4 font-bold text-orange-600">Rp {{ number_format($menu->price, 0, ',', '.') }}</td>
-                    <td class="p-4 text-center">
-                        <span class="px-3 py-1 rounded-full text-xs font-bold border {{ $menu->is_available ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200' }}">
-                            {{ $menu->is_available ? 'Tersedia' : 'Habis' }}
-                        </span>
-                    </td>
-                    <td class="p-4 text-right flex justify-end space-x-3 mt-2">
+                        <div>
+                            <p class="font-black text-slate-700 text-sm tracking-tight">{{ $menu->name }}</p>
+                            <p class="text-[10px] text-slate-400 italic">ID: #{{ $menu->id }}</p>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-5">
+                    <span class="bg-slate-100 text-slate-500 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter">
+                        {{ $menu->category->name ?? 'Tanpa Kategori' }}
+                    </span>
+                </td>
+                <td class="px-6 py-5">
+                    <p class="text-orange-600 font-black text-sm tracking-tighter">Rp{{ number_format($menu->price, 0, ',', '.') }}</p>
+                </td>
+                <td class="px-6 py-5">
+                    <form action="{{ route('admin.menus.toggleStatus', $menu->id) }}" method="POST">
+                        @csrf @method('PATCH')
+                        <button type="submit" class="flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all
+                            {{ $menu->status === 'available' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100' }}">
+                            <div class="w-1.5 h-1.5 rounded-full {{ $menu->status === 'available' ? 'bg-emerald-500' : 'bg-red-500' }}"></div>
+                            {{ $menu->status === 'available' ? 'Tersedia' : 'Habis' }}
+                        </button>
+                    </form>
+                </td>
+                <td class="p-4 text-right flex justify-end space-x-3 mt-2">
                         <a href="{{ route('admin.menus.edit', $menu->id) }}" class="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded transition">Edit</a>
                         <form action="{{ route('admin.menus.destroy', $menu->id) }}" method="POST" onsubmit="return confirm('Hapus menu?')">
                             @csrf @method('DELETE')
                             <button type="submit" class="text-red-600 hover:bg-red-50 px-3 py-1 rounded transition">Hapus</button>
                         </form>
                     </td>
-                </tr>
-                @empty
-                <tr><td colspan="5" class="p-8 text-center text-gray-500">Belum ada menu.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+            </tr>
+            @empty
+            <tr>
+                <td colspan="5" class="px-8 py-20 text-center">
+                    <p class="text-slate-300 font-bold italic uppercase tracking-widest text-xs">Belum ada menu yang ditambahkan</p>
+                </td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
+</div>
 @endsection

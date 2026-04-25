@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Struk - {{ $order->order_code }}</title>
     <style>
-        /* CSS Khusus Printer Thermal (Kertas Lebar 58mm/80mm) */
         @page { margin: 0; }
         body { 
             font-family: 'Courier New', Courier, monospace; 
@@ -14,7 +13,7 @@
             color: #000;
             background: #fff;
             font-size: 12px;
-            width: 58mm; /* Sesuaikan dengan ukuran printer kasir */
+            width: 58mm;
         }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
@@ -23,16 +22,13 @@
         .border-bottom { border-bottom: 1px dashed #000; margin-bottom: 5px; padding-bottom: 5px; }
         .mb-2 { margin-bottom: 10px; }
         .mt-2 { margin-top: 10px; }
-        
         table { width: 100%; border-collapse: collapse; }
         td { vertical-align: top; }
         
-        /* Hilangkan tombol print saat dicetak beneran */
         @media print {
             .no-print { display: none !important; }
         }
 
-        /* Styling tombol untuk layar komputer */
         .btn {
             display: block;
             width: 100%;
@@ -53,7 +49,7 @@
 <body onload="window.print()">
 
     <div class="text-center mb-2">
-        <h2 style="margin:0; font-size: 16px;">RESTO CEMARA</h2>
+        <h2 style="margin:0; font-size: 16px;">WARUNG NUSANTARA</h2>
         <p style="margin:0;">Jl. Universitas Paramadina</p>
         <p style="margin:0;">Telp: 0812-XXXX-XXXX</p>
     </div>
@@ -75,10 +71,10 @@
         </table>
     </div>
 
-    <table class="mb-2">
-        @foreach($order->items as $item)
+    <table class="mb-2 mt-2">
+        @foreach($order->orderItems as $item)
         <tr>
-            <td colspan="3">{{ $item->menu->name }}</td>
+            <td colspan="3" class="font-bold">{{ $item->menu->name }}</td>
         </tr>
         <tr>
             <td>{{ $item->quantity }}x</td>
@@ -88,7 +84,7 @@
         @endforeach
     </table>
 
-    <div class="border-top border-bottom text-right font-bold">
+    <div class="border-top border-bottom text-right font-bold mt-2">
         <table>
             <tr>
                 <td>TOTAL</td>
@@ -98,7 +94,7 @@
     </div>
 
     <div class="text-center mt-2 mb-2">
-        <p style="margin:0;">STATUS: LUNAS</p>
+        <p style="margin:0; font-weight: bold;">STATUS: LUNAS</p>
         <p style="margin:0; margin-top:5px;">Terima Kasih</p>
         <p style="margin:0;">Selamat Menikmati</p>
     </div>

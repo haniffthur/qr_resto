@@ -8,47 +8,68 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Midtrans\Config;
+use Midtrans\Snap;
+use Illuminate\Support\Facades\DB;
+use App\Events\OrderPaid;
 
 class CustomerController extends Controller
 {
-    // -------------------------------------------------------
-    // HALAMAN BERANDA
-    // -------------------------------------------------------
+    /**
+     * HALAMAN BERANDA (HOME)
+     */
     public function home()
     {
-        // Ambil semua kategori (untuk filter)
-        $categories = Category::withCount('menus')->get();
+        // 1. Ambil TOP 3 Terpopuler berdasarkan total_sold
+        // Kita pakai try-catch kecil buat jaga-jaga kalau kolom 'status' belum di-migrate
+        try {
+            $topMenus = Menu::where('status', 'available')
+                            ->where('total_sold', '>', 0)
+                            ->orderBy('total_sold', 'desc')
+                            ->take(3)
+                            ->get();
+        } catch (\Exception $e) {
+            // Fallback kalau kolom status belum ada
+            $topMenus = Menu::orderBy('total_sold', 'desc')->take(3)->get();
+        }
 
-        // Menu populer: ambil 6 saja untuk home
-        $popularMenus = Menu::where('is_popular', true)->take(6)->get();
+        // 2. Ambil Kategori dan Menunya
+        $categories = Category::with(['menus' => function($q) {
+            // Pastikan cuma menu yang tersedia yang muncul
+            if (\Illuminate\Support\Facades\Schema::hasColumn('menus', 'status')) {
+                $q->where('status', 'available');
+            }
+        }])->get();
 
-        // Semua menu dikelompokkan per kategori (untuk filter interaktif)
-        $allMenus = Menu::with('category')->get();
-
-        return view('customer.home', compact('categories', 'popularMenus', 'allMenus'));
+        return view('customer.home', compact('topMenus', 'categories'));
     }
 
-    // -------------------------------------------------------
-    // HALAMAN DAFTAR MENU (GRID)
-    // -------------------------------------------------------
+    /**
+     * HALAMAN DAFTAR MENU (GRID)
+     */
     public function index(Request $request)
     {
-        $categories = Category::with('menus')->get();
+        $categories = Category::with(['menus' => function($q) {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('menus', 'status')) {
+                $q->where('status', 'available');
+            }
+        }])->get();
+
         return view('customer.menu', compact('categories'));
     }
 
-    // -------------------------------------------------------
-    // HALAMAN DETAIL MENU
-    // -------------------------------------------------------
+    /**
+     * DETAIL MENU
+     */
     public function show($id)
     {
         $menu = Menu::with('category')->findOrFail($id);
         return view('customer.detail', compact('menu'));
     }
 
-    // -------------------------------------------------------
-    // SCAN QR
-    // -------------------------------------------------------
+    /**
+     * SCAN QR CODE MEJA
+     */
     public function scan($number, $token)
     {
         $table = Table::where('number', $number)->where('token', $token)->first();
@@ -57,21 +78,28 @@ class CustomerController extends Controller
             return redirect('/')->with('error', 'Meja tidak valid.');
         }
 
-        session(['table_id' => $table->id, 'table_number' => $table->number]);
+        // Jika pindah meja, reset keranjang lama
+        if (session('table_id') && session('table_id') != $table->id) {
+            session()->forget('cart');
+        }
+
+        session([
+            'table_id' => $table->id, 
+            'table_number' => $table->number
+        ]);
 
         return redirect()->route('customer.home');
     }
 
-    // -------------------------------------------------------
-    // ✅ TAMBAH KE KERANJANG
-    // -------------------------------------------------------
+    /**
+     * AJAX: TAMBAH KE KERANJANG
+     */
     public function addToCart(Request $request)
     {
         $request->validate(['menu_id' => 'required|exists:menus,id']);
 
         $menu = Menu::findOrFail($request->menu_id);
         $cart = session()->get('cart', []);
-
         $id = $request->menu_id;
 
         if (isset($cart[$id])) {
@@ -87,13 +115,8 @@ class CustomerController extends Controller
 
         session()->put('cart', $cart);
 
-        // Hitung total
-        $totalQty   = 0;
-        $totalPrice = 0;
-        foreach ($cart as $item) {
-            $totalQty   += $item['quantity'];
-            $totalPrice += $item['price'] * $item['quantity'];
-        }
+        $totalQty = collect($cart)->sum('quantity');
+        $totalPrice = collect($cart)->sum(fn($item) => $item['price'] * $item['quantity']);
 
         return response()->json([
             'status'      => 'success',
@@ -103,9 +126,9 @@ class CustomerController extends Controller
         ]);
     }
 
-    // -------------------------------------------------------
-    // ✅ HAPUS DARI KERANJANG
-    // -------------------------------------------------------
+    /**
+     * AJAX: HAPUS DARI KERANJANG
+     */
     public function removeFromCart($id)
     {
         $cart = session()->get('cart', []);
@@ -115,12 +138,8 @@ class CustomerController extends Controller
             session()->put('cart', $cart);
         }
 
-        $totalQty   = 0;
-        $totalPrice = 0;
-        foreach ($cart as $item) {
-            $totalQty   += $item['quantity'];
-            $totalPrice += $item['price'] * $item['quantity'];
-        }
+        $totalQty = collect($cart)->sum('quantity');
+        $totalPrice = collect($cart)->sum(fn($item) => $item['price'] * $item['quantity']);
 
         return response()->json([
             'status'      => 'success',
@@ -130,59 +149,121 @@ class CustomerController extends Controller
         ]);
     }
 
-    // -------------------------------------------------------
-    // TAMPILAN HALAMAN KERANJANG
-    // -------------------------------------------------------
+    /**
+     * TAMPILAN KERANJANG
+     */
     public function viewCart()
     {
         $cart  = session()->get('cart', []);
-        $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['price'] * $item['quantity'];
-        }
+        $total = collect($cart)->sum(fn($item) => $item['price'] * $item['quantity']);
 
         return view('customer.cart', compact('cart', 'total'));
     }
 
-    // -------------------------------------------------------
-    // ✅ PLACE ORDER (Buat pesanan baru)
-    // -------------------------------------------------------
-    public function placeOrder(Request $request)
+    /**
+     * PROSES CHECKOUT MIDTRANS
+     */
+    public function checkout(Request $request)
     {
         $cart = session()->get('cart', []);
-
+        
         if (empty($cart)) {
             return response()->json(['status' => 'error', 'message' => 'Keranjang kosong!'], 400);
         }
 
-        $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['price'] * $item['quantity'];
-        }
+        $total = collect($cart)->sum(fn($item) => $item['price'] * $item['quantity']);
 
-        $order = Order::create([
-            'table_id'       => session('table_id'),
-            'total_price'    => $total,
-            'status'         => 'pending',
-            'payment_status' => 'unpaid',
-        ]);
+        DB::beginTransaction();
 
-        foreach ($cart as $menuId => $item) {
-            OrderItem::create([
-                'order_id'  => $order->id,
-                'menu_id'   => $menuId,
-                'quantity'  => $item['quantity'],
-                'price'     => $item['price'],
-                'sub_total' => $item['price'] * $item['quantity'],
+        try {
+            $orderCode = 'WN-' . session('table_number', '00') . '-' . time();
+            
+            $order = Order::create([
+                'table_id'       => session('table_id'),
+                'order_code'     => $orderCode,
+                'customer_name'  => 'Pelanggan Meja ' . session('table_number', '00'),
+                'total_price'    => $total,
+                'status'         => 'pending',
+                'payment_status' => 'pending',
+                'note'           => $request->note ?? null,
             ]);
+
+            foreach ($cart as $id => $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'menu_id'  => $id,
+                    'quantity' => $item['quantity'],
+                    'price'    => $item['price'],
+                ]);
+            }
+
+            // MIDTRANS CONFIG
+            Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+            Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+            Config::$isSanitized = true;
+            Config::$is3ds = true;
+
+            $params = [
+                'transaction_details' => [
+                    'order_id'     => $orderCode,
+                    'gross_amount' => (int)$total,
+                ],
+                'customer_details' => [
+                    'first_name' => 'Meja ' . session('table_number', '00'),
+                    'email'      => 'cust' . time() . '@resto.com',
+                ],
+            ];
+
+            $snapToken = Snap::getSnapToken($params);
+            $order->update(['snap_token' => $snapToken]);
+
+            DB::commit();
+            session()->forget('cart');
+
+            return response()->json([
+                'status'     => 'success',
+                'snap_token' => $snapToken,
+                'order_code' => $orderCode
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * WEBHOOK MIDTRANS
+     */
+    public function paymentCallback(Request $request)
+    {
+        $payload = $request->all();
+        $orderId = $payload['order_id'] ?? null;
+
+        if (!$orderId) return response()->json(['message' => 'No order ID'], 200);
+
+        $serverKey = env('MIDTRANS_SERVER_KEY');
+        $signature = hash('sha512', $orderId . $payload['status_code'] . $payload['gross_amount'] . $serverKey);
+
+        if ($signature !== $payload['signature_key']) {
+            return response()->json(['message' => 'Invalid signature'], 403);
         }
 
-        session()->forget('cart');
+        $order = Order::where('order_code', $orderId)->first();
+        if (!$order) return response()->json(['message' => 'Order not found'], 404);
 
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Pesanan berhasil dibuat!',
-            'order_id'=> $order->id,
-        ]);
+        $transactionStatus = $payload['transaction_status'];
+
+        if ($transactionStatus == 'capture' || $transactionStatus == 'settlement') {
+            $order->update(['payment_status' => 'paid']);
+            
+            // Trigger WebSocket untuk Kasir
+            broadcast(new OrderPaid($order));
+            
+        } elseif (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
+            $order->update(['payment_status' => 'failed']);
+        }
+
+        return response()->json(['message' => 'Status Updated']);
     }
 }

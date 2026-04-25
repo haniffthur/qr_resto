@@ -8,6 +8,7 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
+
 class MenuController extends Controller
 {
     // 1. Menampilkan daftar menu
@@ -96,4 +97,15 @@ class MenuController extends Controller
 
         return redirect()->route('admin.menus.index')->with('success', 'Menu berhasil dihapus!');
     }
+
+    public function toggleStatus($id)
+{
+    $menu = Menu::findOrFail($id);
+    
+    // Switch status
+    $menu->status = ($menu->status === 'available') ? 'unavailable' : 'available';
+    $menu->save();
+
+    return back()->with('success', 'Status ' . $menu->name . ' berhasil diperbarui!');
+}
 }

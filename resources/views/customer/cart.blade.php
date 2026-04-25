@@ -1,59 +1,75 @@
 @extends('layouts.customer')
+
 @section('content')
-<main class="px-5 mt-6">
-    <h2 class="text-xl font-black text-gray-800 uppercase tracking-tighter mb-6">Keranjang Kamu</h2>
+<main class="px-5 mt-6 pb-60">
+    <div class="flex items-center gap-3 mb-8">
+        <a href="{{ route('customer.menu') }}" class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500">
+            <i class="fa-solid fa-chevron-left"></i>
+        </a>
+        <h2 class="text-xl font-black text-slate-800 uppercase tracking-tighter">Keranjang Kamu 🛒</h2>
+    </div>
 
     @if(count($cart) > 0)
-    <div class="space-y-4 mb-52" id="cart-items">
+    <div class="space-y-4" id="cart-wrapper">
         @foreach($cart as $id => $item)
-        <div class="cart-item-{{ $id }} bg-white p-4 rounded-[2rem] border border-gray-100 shadow-sm flex gap-4 items-center transition-all duration-300">
-            <div class="w-20 h-20 bg-gray-50 rounded-2xl overflow-hidden flex-shrink-0">
+        <div class="cart-item-{{ $id }} bg-white p-4 rounded-[2rem] border border-slate-50 shadow-sm flex gap-4 items-center transition-all duration-500">
+            <div class="w-20 h-20 bg-slate-50 rounded-2xl overflow-hidden shrink-0 border border-slate-100">
                 <img src="{{ asset('storage/'.$item['image']) }}" class="w-full h-full object-cover"
                      onerror="this.src='https://via.placeholder.com/150/f97316/ffffff?text=WN'">
             </div>
             <div class="flex-1">
-                <h4 class="text-xs font-bold text-gray-800">{{ $item['name'] }}</h4>
-                <p class="text-orange-600 font-black text-sm mt-1">Rp{{ number_format($item['price']) }}</p>
-                <p class="text-[10px] font-bold text-gray-400 mt-1">Qty: <span class="item-qty-{{ $id }}">{{ $item['quantity'] }}</span></p>
-                <p class="text-[10px] font-bold text-gray-500 mt-0.5">
-                    Subtotal: <span class="font-black text-orange-500">Rp{{ number_format($item['price'] * $item['quantity']) }}</span>
-                </p>
+                <h4 class="text-xs font-black text-slate-800 leading-tight">{{ $item['name'] }}</h4>
+                <p class="text-orange-600 font-black text-sm mt-1">Rp{{ number_format($item['price'], 0, ',', '.') }}</p>
+                <div class="flex items-center gap-2 mt-2">
+                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
+                        Qty: {{ $item['quantity'] }}
+                    </span>
+                </div>
             </div>
-            {{-- ✅ Tombol hapus yang berfungsi --}}
+            
+            {{-- Tombol Hapus --}}
             <button onclick="removeItem({{ $id }})"
-                    class="w-9 h-9 bg-red-50 text-red-400 rounded-xl flex items-center justify-center active:scale-90 transition hover:bg-red-100">
+                    class="w-10 h-10 bg-red-50 text-red-400 rounded-xl flex items-center justify-center active:scale-90 transition hover:bg-red-500 hover:text-white">
                 <i class="fa-solid fa-trash-can text-xs"></i>
             </button>
         </div>
         @endforeach
     </div>
 
-    {{-- SUMMARY + TOMBOL PESAN --}}
-    <div class="fixed bottom-20 inset-x-5 z-[90]">
-        <div class="bg-white p-5 rounded-3xl border border-gray-100 shadow-2xl mb-3">
-            <div class="flex justify-between items-center text-[10px] text-gray-400 font-bold mb-2">
-                <span class="uppercase">Total Item</span>
-                <span id="summary-qty" class="text-gray-700">{{ collect($cart)->sum('quantity') }} item</span>
+    {{-- SUMMARY & CHECKOUT --}}
+    <div class="fixed bottom-24 inset-x-5 z-[90]">
+        <div class="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-2xl mb-4 animate__animated animate__slideInUp">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Bayar</p>
+                    <p class="text-xl font-black text-orange-600 tracking-tighter" id="summary-total">
+                        Rp{{ number_format($total, 0, ',', '.') }}
+                    </p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Meja</p>
+                    <p class="text-sm font-black text-slate-800">{{ session('table_number', '-') }}</p>
+                </div>
             </div>
-            <div class="flex justify-between items-center">
-                <span class="text-[10px] font-bold text-gray-400 uppercase">Total Bayar</span>
-                <span class="text-xl font-black text-orange-600 tracking-tighter" id="summary-total">Rp{{ number_format($total) }}</span>
-            </div>
+            
+            <button onclick="placeOrder()" 
+                    class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black text-sm uppercase tracking-[0.2em] shadow-xl shadow-slate-200 active:scale-95 transition flex items-center justify-center gap-3">
+                <span>Konfirmasi Pesanan</span>
+                <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
         </div>
-        <button onclick="placeOrder()"
-                class="w-full bg-[#121826] text-white py-5 rounded-3xl font-black text-sm uppercase tracking-widest shadow-xl active:scale-95 transition">
-            Pesan Sekarang 🍽️
-        </button>
     </div>
 
     @else
     {{-- EMPTY STATE --}}
-    <div class="py-24 text-center" id="empty-state">
-        <i class="fa-solid fa-cart-shopping text-6xl text-gray-100 mb-6 block"></i>
-        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest italic mb-6">Belum ada menu yang dipilih</p>
+    <div class="py-24 text-center">
+        <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-slate-100">
+            <i class="fa-solid fa-cart-shopping text-3xl text-slate-200"></i>
+        </div>
+        <p class="text-xs font-black text-slate-400 uppercase tracking-widest italic mb-8">Belum ada menu yang dipilih, Nif.</p>
         <a href="{{ route('customer.menu') }}"
-           class="bg-orange-500 text-white px-8 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg">
-            Lihat Menu
+           class="inline-block bg-orange-500 text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-orange-200 active:scale-95 transition">
+            Pilih Menu Sekarang
         </a>
     </div>
     @endif
@@ -62,99 +78,86 @@
 
 @section('scripts')
 <script>
-// ✅ Hapus item dari keranjang
+// ✅ Fungsi Hapus Item (Pake jQuery biar sinkron ama layout)
 function removeItem(id) {
     Swal.fire({
-        title: 'Hapus item?',
-        text: 'Item ini akan dihapus dari keranjang.',
+        title: 'Hapus Menu?',
+        text: "Menu ini akan dikeluarkan dari keranjang.",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Ya, hapus',
+        cancelButtonColor: '#cbd5e1',
+        confirmButtonText: 'Ya, Hapus',
         cancelButtonText: 'Batal',
-        customClass: { popup: 'rounded-3xl' }
-    }).then(function(result) {
+        customClass: { popup: 'rounded-[2rem]' }
+    }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
-                url: "{{ url('/cart/remove') }}/" + id,
+                url: "/cart/remove/" + id,
                 method: "POST",
                 success: function(res) {
-                    // Animasi keluar lalu hapus dari DOM
-                    $('.cart-item-' + id).css({ opacity: 0, transform: 'translateX(100px)' });
-                    setTimeout(function() {
+                    // Animasi Hapus
+                    $('.cart-item-' + id).addClass('opacity-0 -translate-x-full');
+                    setTimeout(() => {
                         $('.cart-item-' + id).remove();
-
-                        // Update badge header
-                        if (res.cart_count > 0) {
-                            $('.cart-count').text(res.cart_count).removeClass('hidden');
+                        
+                        // Update total harga di summary
+                        $('#summary-total').text('Rp' + res.total_price);
+                        
+                        // Update badge di header layout
+                        if(res.cart_count > 0) {
+                            $('.cart-count').text(res.cart_count);
                         } else {
-                            $('.cart-count').addClass('hidden');
+                            location.reload(); // Reload kalo kosong buat nampilinn empty state
                         }
+                    }, 500);
 
-                        // Cek kalau keranjang sudah kosong
-                        if (Object.keys(res.cart).length === 0) {
-                            location.reload(); // Reload untuk tampilkan empty state
-                        }
-                    }, 300);
-
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 1000,
-                        icon: 'success',
-                        title: 'Item dihapus'
-                    });
+                    Swal.fire({ toast:true, position:'top-end', icon:'success', title:'Dihapus!', showConfirmButton:false, timer:1000 });
                 }
             });
         }
     });
 }
 
-// ✅ Place order
+// ✅ Fungsi Checkout Midtrans
 function placeOrder() {
     Swal.fire({
-        title: 'Konfirmasi Pesanan',
-        text: 'Yakin mau pesan sekarang?',
+        title: 'Siap Pesan?',
+        text: "Pesanan akan langsung dikirim ke dapur setelah pembayaran lunas.",
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#121826',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Pesan!',
-        cancelButtonText: 'Cek dulu',
-        customClass: { popup: 'rounded-3xl' }
-    }).then(function(result) {
+        confirmButtonText: 'Bayar Sekarang',
+        cancelButtonText: 'Nanti Dulu',
+        customClass: { popup: 'rounded-[2rem]' }
+    }).then((result) => {
         if (result.isConfirmed) {
-            // Tampilkan loading
-            Swal.fire({
-                title: 'Memproses...',
-                allowOutsideClick: false,
-                didOpen: function() { Swal.showLoading(); }
-            });
+            // Tampilkan Loading
+            Swal.fire({ title: 'Memproses Pesanan...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
             $.ajax({
                 url: "{{ route('customer.order') }}",
                 method: "POST",
                 success: function(res) {
-                    Swal.fire({
-                        title: 'Pesanan Masuk! 🎉',
-                        text: 'Pesananmu sedang diproses oleh dapur.',
-                        icon: 'success',
-                        confirmButtonColor: '#f97316',
-                        confirmButtonText: 'Oke, siap!',
-                        customClass: { popup: 'rounded-3xl' }
-                    }).then(function() {
-                        window.location.href = "{{ route('customer.home') }}";
+                    Swal.close();
+                    
+                    // PANGGIL POPUP MIDTRANS
+                    window.snap.pay(res.snap_token, {
+                        onSuccess: function(result) {
+                            Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil!', text: 'Pesanan lu sedang dimasak, Nif!', customClass: { popup: 'rounded-[2rem]' }})
+                            .then(() => { window.location.href = "{{ route('customer.home') }}"; });
+                        },
+                        onPending: function(result) {
+                            Swal.fire({ icon: 'info', title: 'Menunggu Pembayaran', text: 'Selesaikan pembayaran lu biar pesanan masuk dapur.', customClass: { popup: 'rounded-[2rem]' }})
+                            .then(() => { window.location.href = "{{ route('customer.home') }}"; });
+                        },
+                        onError: function(result) {
+                            Swal.fire('Gagal!', 'Pembayaran lu bermasalah, coba lagi ya.', 'error');
+                        }
                     });
                 },
                 error: function(xhr) {
-                    Swal.fire({
-                        title: 'Gagal!',
-                        text: xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan.',
-                        icon: 'error',
-                        confirmButtonColor: '#f97316'
-                    });
+                    Swal.fire('Waduh!', xhr.responseJSON.message, 'error');
                 }
             });
         }

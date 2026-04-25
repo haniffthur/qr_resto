@@ -16,6 +16,7 @@ return new class extends Migration
         $table->string('number')->unique(); 
         $table->string('token')->unique(); 
         $table->enum('status', ['available', 'occupied'])->default('available');
+        
         $table->timestamps();
     });
 }

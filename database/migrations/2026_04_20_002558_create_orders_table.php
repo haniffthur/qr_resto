@@ -16,8 +16,9 @@ return new class extends Migration
         $table->foreignId('table_id')->constrained();
         $table->string('order_code')->unique();
         $table->integer('total_price');
-        $table->enum('status', ['pending', 'processing', 'completed', 'cancelled'])->default('pending');
-        $table->enum('payment_status', ['unpaid', 'paid'])->default('unpaid');
+        $table->string('status')->default('pending');
+        $table->string('payment_status')->default('pending');
+        $table->string('snap_token')->nullable();
         $table->timestamps();
     });
 }
